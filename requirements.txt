@@ -1,7 +1,7 @@
 streamlit
-numpy
+opencv-python-headless
 pillow
+numpy
 scikit-learn
-opencv-python
-scikit-image
 joblib
+scikit-image
