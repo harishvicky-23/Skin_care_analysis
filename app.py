@@ -7,15 +7,15 @@ from skimage.feature import local_binary_pattern
 import matplotlib.pyplot as plt
 
 # Load models
-skin_model = joblib.load("skin_type_svm_model.pkl")
-skin_pca = joblib.load("skin_type_pca.pkl")
-skin_scaler = joblib.load("skin_type_scaler.pkl")
+skin_model = joblib.load("models/skin_type_svm_model.pkl")
+skin_pca = joblib.load("models/skin_type_pca.pkl")
+skin_scaler = joblib.load("models/skin_type_scaler.pkl")
 
-acne_model = joblib.load("acne_model.pkl")
+acne_model = joblib.load("models/acne_model.pkl")
 
-wrinkle_model = joblib.load("wrinkle_model.pkl")
-wrinkle_pca = joblib.load("wrinkle_pca.pkl")
-wrinkle_le = joblib.load("wrinkle_label_encoder.pkl")
+wrinkle_model = joblib.load("models/wrinkle_model.pkl")
+wrinkle_pca = joblib.load("models/wrinkle_pca.pkl")
+wrinkle_le = joblib.load("models/wrinkle_label_encoder.pkl")
 
 skin_classes = ['dry', 'normal', 'oily']
 
