@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import cv2
 import joblib
-from skimage.feature import local_binary_pattern, greycomatrix, greycoprops
+from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
 from sklearn.preprocessing import StandardScaler
 from skimage import io, color
 import os
@@ -35,8 +35,8 @@ def extract_features(image_path):
 
     # Haralick features
     gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-    glcm = greycomatrix(gray, [1], [0], symmetric=True, normed=True)
-    haralick = [greycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
+    glcm = graycomatrix(gray, [1], [0], symmetric=True, normed=True)
+    haralick = [graycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
 
     return np.array(color_hist + lbp_hist.tolist() + haralick)
 
@@ -64,8 +64,8 @@ def predict_image(image_path):
 def predict_wrinkles(image_path):
     img = Image.open(image_path).resize((128, 128)).convert("L")
     img_np = np.array(img)
-    glcm = greycomatrix(img_np, [1], [0], symmetric=True, normed=True)
-    haralick = [greycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
+    glcm = graycomatrix(img_np, [1], [0], symmetric=True, normed=True)
+    haralick = [graycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
     prediction = wrinkle_model.predict([haralick])[0]
     return prediction
 
