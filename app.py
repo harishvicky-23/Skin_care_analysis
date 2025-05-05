@@ -6,6 +6,7 @@ import mahotas
 from skimage.feature import local_binary_pattern
 import matplotlib.pyplot as plt
 import os
+from PIL import Image
 
 # Load models
 skin_model = joblib.load("models/skin_type_svm_model.pkl")
