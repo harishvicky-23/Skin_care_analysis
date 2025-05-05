@@ -154,8 +154,8 @@ st.title("🧴 AI-Based SkinCare Recommendation System")
 uploaded_file = st.file_uploader("📤 Upload a face image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    with open("temp.jpg", "wb") as f:
-        f.write(uploaded_file.read())
+    image = Image.open(uploaded_file).convert("RGB")
+    image.save("temp.jpg")  # Ensures it's a proper image file
     image_path = "temp.jpg"
 
     st.image(image_path, caption="Uploaded Image", use_container_width=True)
