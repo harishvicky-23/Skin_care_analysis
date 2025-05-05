@@ -5,6 +5,7 @@ import joblib
 import mahotas
 from skimage.feature import local_binary_pattern
 import matplotlib.pyplot as plt
+import os
 
 # Load models
 skin_model = joblib.load("models/skin_type_svm_model.pkl")
@@ -147,38 +148,51 @@ def generate_recommendation(skin_type, acne_lvl, wrink_lvl, age, profession, wor
     return recommendations
 
 # Streamlit app setup
+import streamlit as st
+from PIL import Image
+import os
+
+# Set page config
 st.set_page_config(page_title="SkinCare Analyzer")
 st.title("🧴 AI-Based SkinCare Recommendation System")
 
-# Upload image
+# Image upload
 uploaded_file = st.file_uploader("📤 Upload a face image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    image.save("temp.jpg")  # Ensures it's a proper image file
-    image_path = "temp.jpg"
+image_path = None  # Initialize image path
 
+if uploaded_file is not None:
+    # Save and display image
+    image = Image.open(uploaded_file).convert("RGB")
+    image_path = "temp.jpg"
+    image.save(image_path)
+    
     st.image(image_path, caption="Uploaded Image", use_container_width=True)
 
-    # Step 2: User inputs
-    st.subheader("🧍 Step 2: Enter Lifestyle Details")
-    age = st.number_input("Enter your age", min_value=10, max_value=100, value=25)
-    profession = st.text_input("Enter your profession", value="Student")
-    work_hours = st.number_input("Average work hours per day", min_value=0, max_value=24, value=6)
-    free_time = st.number_input("Free time per day (hours)", min_value=0.0, max_value=24.0, value=2.0)
-    using_products = st.radio("Are you currently using skincare products?", options=["yes", "no"])
+# Step 2: User inputs
+st.subheader("🧍 Step 2: Enter Lifestyle Details")
+age = st.number_input("Enter your age", min_value=10, max_value=100, value=25)
+profession = st.text_input("Enter your profession", value="Student")
+work_hours = st.number_input("Average work hours per day", min_value=0, max_value=24, value=6)
+free_time = st.number_input("Free time per day (hours)", min_value=0.0, max_value=24.0, value=2.0)
+using_products = st.radio("Are you currently using skincare products?", options=["yes", "no"])
 
-    # Step 3: Generate button
-    if st.button("💡 Generate Recommendations"):
+# Step 3: Button to trigger prediction
+if st.button("💡 Generate Recommendations"):
+    if image_path and os.path.exists(image_path):
         st.subheader("🔍 Step 1: Analyzing Skin Details")
+
+        # Call your models here (make sure they are defined above this code)
         skin_type = predict_skin_type(image_path)
         acne_label, acne_prob = predict_acne(image_path)
         wrink_lvl = predict_wrinkles(image_path)
 
+        # Display predictions
         st.write(f"**Skin Type:** {skin_type}")
         st.write(f"**Acne Level:** {acne_label} ({acne_prob:.2f}%)")
         st.write(f"**Wrinkle Level:** {wrink_lvl}")
 
+        # Step 4: Recommendations
         st.subheader("📋 Step 4: Personalized Recommendations")
         recs = generate_recommendation(
             skin_type.lower(),
@@ -190,3 +204,5 @@ if uploaded_file is not None:
 
         for i, rec in enumerate(recs, 1):
             st.markdown(f"{i}. {rec}")
+    else:
+        st.warning("Please upload a valid image before generating recommendations.")
