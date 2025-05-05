@@ -22,7 +22,8 @@ wrinkle_le = joblib.load("models/wrinkle_label_encoder.pkl")
 skin_classes = ['dry', 'normal', 'oily']
 
 # --- Feature extraction functions ---
-def extract_skin_features(img):
+def extract_skin_features(img_path):
+    img = Image.open(img_path).convert("RGB")
     img = np.array(img)
     img = cv2.resize(img, (128, 128))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -40,7 +41,8 @@ def extract_skin_features(img):
     haralick_feat = mahotas.features.haralick(gray).mean(axis=0)
     return np.concatenate([color_feat, lbp_hist, haralick_feat])
 
-def extract_acne_features(img):
+def extract_acne_features(img_path):
+    img = Image.open(img_path).convert("RGB")
     img = np.array(img)
     img = cv2.resize(img, (224, 224))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -54,7 +56,8 @@ def extract_acne_features(img):
 
     return np.concatenate([rgb_hist, hsv_hist, lbp_hist])
 
-def extract_wrinkle_features(img):
+def extract_wrinkle_features(img_path):
+    img = Image.open(img_path).convert("RGB")
     img = np.array(img)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, (128, 128))
