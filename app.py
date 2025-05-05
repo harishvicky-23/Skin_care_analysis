@@ -41,6 +41,7 @@ def extract_skin_features(img):
     return np.concatenate([color_feat, lbp_hist, haralick_feat])
 
 def extract_acne_features(img):
+    img = np.array(img)
     img = cv2.resize(img, (224, 224))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -54,6 +55,7 @@ def extract_acne_features(img):
     return np.concatenate([rgb_hist, hsv_hist, lbp_hist])
 
 def extract_wrinkle_features(img):
+    img = np.array(img)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, (128, 128))
     haralick = mahotas.features.haralick(gray).mean(axis=0)
