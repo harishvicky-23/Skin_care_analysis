@@ -23,6 +23,7 @@ skin_classes = ['dry', 'normal', 'oily']
 
 # --- Feature extraction functions ---
 def extract_skin_features(img):
+    img = np.array(img)
     img = cv2.resize(img, (128, 128))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
