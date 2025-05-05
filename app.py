@@ -1,139 +1,192 @@
-
 import streamlit as st
-from PIL import Image
 import numpy as np
 import cv2
 import joblib
-from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
-from sklearn.preprocessing import StandardScaler
-from skimage import io, color
-import os
+import mahotas
+from skimage.feature import local_binary_pattern
+import matplotlib.pyplot as plt
 
-# Load pre-trained models
-skin_type_model = joblib.load("models/skin_type_model.pkl")
-acne_model = joblib.load("models/acne_model.pkl")
-wrinkle_model = joblib.load("models/wrinkle_model.pkl")
-scaler = joblib.load("models/scaler.pkl")
-pca = joblib.load("models/pca.pkl")
+# Load models
+skin_model = joblib.load("skin_type_svm_model.pkl")
+skin_pca = joblib.load("skin_type_pca.pkl")
+skin_scaler = joblib.load("skin_type_scaler.pkl")
 
-def extract_features(image_path):
-    img = Image.open(image_path).resize((128, 128)).convert("RGB")
-    img_np = np.array(img)
+acne_model = joblib.load("acne_model.pkl")
 
-    # Color histogram
-    color_hist = []
-    for i in range(3):
-        hist = cv2.calcHist([img_np], [i], None, [256], [0, 256])
-        hist = cv2.normalize(hist, hist).flatten()
-        color_hist.extend(hist)
+wrinkle_model = joblib.load("wrinkle_model.pkl")
+wrinkle_pca = joblib.load("wrinkle_pca.pkl")
+wrinkle_le = joblib.load("wrinkle_label_encoder.pkl")
 
-    # LBP
-    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-    lbp = local_binary_pattern(gray, P=8, R=1, method='uniform')
+skin_classes = ['dry', 'normal', 'oily']
+
+# --- Feature extraction functions ---
+def extract_skin_features(img):
+    img = cv2.resize(img, (128, 128))
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    color_feat = np.concatenate([
+        cv2.calcHist([img], [0, 1, 2], None, [8, 8, 8], [0,256,0,256,0,256]).flatten(),
+        cv2.calcHist([hsv], [0, 1, 2], None, [8, 8, 8], [0,180,0,256,0,256]).flatten()
+    ])
+
+    lbp = local_binary_pattern(gray, P=8, R=1, method="uniform")
     lbp_hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 11), range=(0, 10))
-    lbp_hist = lbp_hist.astype("float") / (lbp_hist.sum() + 1e-6)
+    lbp_hist = lbp_hist.astype("float") / (lbp_hist.sum() + 1e-7)
 
-    # Haralick features
-    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-    glcm = graycomatrix(gray, [1], [0], symmetric=True, normed=True)
-    haralick = [graycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
+    haralick_feat = mahotas.features.haralick(gray).mean(axis=0)
+    return np.concatenate([color_feat, lbp_hist, haralick_feat])
 
-    return np.array(color_hist + lbp_hist.tolist() + haralick)
+def extract_acne_features(img):
+    img = cv2.resize(img, (224, 224))
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-def predict_skin_type(image_path):
-    features = extract_features(image_path)
-    features_scaled = scaler.transform([features])
-    features_pca = pca.transform(features_scaled)
-    prediction = skin_type_model.predict(features_pca)[0]
-    return prediction
+    rgb_hist = np.concatenate([cv2.calcHist([img], [i], None, [32], [0, 256]).flatten() for i in range(3)])
+    hsv_hist = np.concatenate([cv2.calcHist([hsv], [i], None, [32], [0, 256]).flatten() for i in range(3)])
 
-def predict_image(image_path):
-    img = Image.open(image_path).resize((128, 128)).convert("RGB")
-    img_np = np.array(img)
+    lbp = local_binary_pattern(gray, 8, 1, method='uniform')
+    lbp_hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 10), range=(0, 9))
 
-    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-    lbp = local_binary_pattern(gray, 8, 1, method="uniform")
-    lbp_hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 11), range=(0, 10))
-    lbp_hist = lbp_hist.astype("float") / (lbp_hist.sum() + 1e-6)
+    return np.concatenate([rgb_hist, hsv_hist, lbp_hist])
 
-    prediction = acne_model.predict([lbp_hist])[0]
-    prob = acne_model.predict_proba([lbp_hist])[0]
-    confidence = prob[list(acne_model.classes_).index(prediction)]
-    return prediction, confidence
+def extract_wrinkle_features(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.resize(gray, (128, 128))
+    haralick = mahotas.features.haralick(gray).mean(axis=0)
+    return haralick
 
-def predict_wrinkles(image_path):
-    img = Image.open(image_path).resize((128, 128)).convert("L")
-    img_np = np.array(img)
-    glcm = graycomatrix(img_np, [1], [0], symmetric=True, normed=True)
-    haralick = [graycoprops(glcm, prop).flatten()[0] for prop in ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']]
-    prediction = wrinkle_model.predict([haralick])[0]
-    return prediction
+# --- Prediction functions ---
+def predict_skin_type(img):
+    features = extract_skin_features(img)
+    features_scaled = skin_scaler.transform([features])
+    features_pca = skin_pca.transform(features_scaled)
+    prediction = skin_model.predict(features_pca)[0]
+    return skin_classes[prediction]
 
-def generate_recommendation(skin_type, acne_level, wrink_lvl, age, profession, work_hours, free_time, using_products):
-    recs = []
+def predict_acne(img):
+    features = extract_acne_features(img)
+    pred = acne_model.predict([features])[0]
+    prob = acne_model.predict_proba([features])[0][pred]
+    label = "acne" if pred else "no acne"
+    return (label, prob * 100)
 
-    # Skin type based
-    if skin_type == "dry":
-        recs.append("Use hydrating cleansers and moisturizers.")
-    elif skin_type == "oily":
-        recs.append("Use oil-free, non-comedogenic products.")
+def predict_wrinkles(img):
+    features = extract_wrinkle_features(img)
+    features_pca = wrinkle_pca.transform([features])
+    prediction = wrinkle_model.predict(features_pca)[0]
+    return wrinkle_le.inverse_transform([prediction])[0].lower()
+
+# --- Recommendation Logic ---
+def generate_recommendation(skin_type, acne_lvl, wrink_lvl, age, profession, work_hours, free_time, using_products):
+    acne_label, acne_prob = acne_lvl
+    recommendations = []
+
+    if skin_type == 'dry':
+        recommendations += ["Use a rich, hydrating moisturizer twice daily.",
+                            "Drink plenty of water to maintain skin hydration.",
+                            "Avoid alcohol-based products that strip natural oils."]
+    elif skin_type == 'oily':
+        recommendations += ["Use an oil-free, foaming cleanser.",
+                            "Try water-based moisturizers.",
+                            "Avoid heavy makeup that clogs pores."]
+    elif skin_type == 'normal':
+        recommendations += ["Moisturize daily.",
+                            "Use SPF daily even indoors."]
+    
+    if acne_label == 'acne' and acne_prob > 70:
+        recommendations += ["Avoid oily/spicy food.",
+                            "Use salicylic acid-based cleansers.",
+                            "Clean pillowcases and phone screen regularly.",
+                            "Do not pop pimples."]
+    elif acne_label == 'acne':
+        recommendations.append("Mild acne signs detected — use gentle, non-comedogenic products.")
     else:
-        recs.append("Use a balanced skincare routine.")
+        recommendations.append("No major acne detected. Maintain your current routine.")
 
-    # Acne level
-    if acne_level[0] == "acne" and acne_level[1] > 50:
-        recs.append("Use products with salicylic acid or benzoyl peroxide.")
-    elif acne_level[0] == "acne":
-        recs.append("Maintain proper skin hygiene and avoid oily food.")
+    if wrink_lvl == "wrinkled":
+        recommendations += ["Use retinol-based products at night.",
+                            "Eat antioxidant-rich foods.",
+                            "Get enough sleep and reduce stress."]
+    else:
+        recommendations.append("Skin looks smooth! Maintain hydration and SPF.")
 
-    # Wrinkle level
-    if wrink_lvl == "high":
-        recs.append("Use retinol-based creams and apply sunscreen daily.")
-    elif wrink_lvl == "medium":
-        recs.append("Hydrate well and consider anti-aging creams.")
+    if age < 20:
+        recommendations.append("Stick to gentle cleansers and light moisturizers.")
+    elif 20 <= age <= 35:
+        recommendations.append("Use SPF and light exfoliation weekly.")
+    elif 36 <= age <= 50:
+        recommendations.append("Add collagen-boosting serums and night creams.")
+    else:
+        recommendations.append("Use anti-aging products and consult a dermatologist yearly.")
 
-    # Lifestyle
-    if work_hours > 8:
-        recs.append("Ensure skin hydration during long work hours.")
+    if "construction" in profession or "outdoor" in profession:
+        recommendations += ["Use strong SPF (50+) and reapply every 2-3 hours.",
+                            "Cleanse thoroughly after work."]
+    elif "student" in profession or "jobless" in profession:
+        recommendations.append("Great time to build a skincare routine. Stay hydrated.")
+    elif "office" in profession or "indoor" in profession:
+        recommendations += ["Use humidifiers indoors.",
+                            "Take screen breaks to reduce eye strain."]
+
+    if work_hours >= 10:
+        recommendations.append("Long work hours — don’t skip your nightly skincare.")
+    if work_hours >= 4:
+        recommendations.append("Apply broad-spectrum sunscreen daily.")
+
     if free_time < 1:
-        recs.append("Try a quick 5-min daily skincare routine.")
+        recommendations.append("Even 5 mins twice a day helps. Cleanse + moisturize.")
+    else:
+        recommendations.append("Use free time for masks or gentle exfoliation weekly.")
+
     if using_products == "no":
-        recs.append("Start with basic products: cleanser, moisturizer, sunscreen.")
+        recommendations.append("Start with a simple routine: Cleanser, Moisturizer, SPF.")
+    else:
+        recommendations.append("Check product ingredients for harsh chemicals.")
 
-    recs.append("Stay hydrated and get enough sleep!")
-    return recs
+    return recommendations
 
-# Streamlit UI
-st.set_page_config(page_title="Skincare Analyzer", page_icon="💆‍♀️")
-st.title("💆‍♀️ Skincare Analysis & Personalized Recommendations")
+# Streamlit app setup
+st.set_page_config(page_title="SkinCare Analyzer")
+st.title("🧴 AI-Based SkinCare Recommendation System")
 
+# Upload image
 uploaded_file = st.file_uploader("📤 Upload a face image", type=["jpg", "jpeg", "png"])
-if uploaded_file:
+
+if uploaded_file is not None:
     with open("temp.jpg", "wb") as f:
         f.write(uploaded_file.read())
-    st.image("temp.jpg", caption="Uploaded Image", use_column_width=True)
+    image_path = "temp.jpg"
 
-    st.subheader("📋 Additional Info")
-    age = st.number_input("Age", 10, 100, 25)
-    profession = st.text_input("Profession")
-    work_hours = st.slider("Work hours/day", 0, 16, 8)
-    free_time = st.slider("Free time/day (hours)", 0.0, 10.0, 1.0)
-    using_products = st.radio("Are you using skincare products?", ("yes", "no"))
+    st.image(image_path, caption="Uploaded Image", use_container_width=True)
 
-    if st.button("🔍 Analyze"):
-        skin_type = predict_skin_type("temp.jpg")
-        acne_level = predict_image("temp.jpg")
-        wrinkle_level = predict_wrinkles("temp.jpg")
+    # Step 2: User inputs
+    st.subheader("🧍 Step 2: Enter Lifestyle Details")
+    age = st.number_input("Enter your age", min_value=10, max_value=100, value=25)
+    profession = st.text_input("Enter your profession", value="Student")
+    work_hours = st.number_input("Average work hours per day", min_value=0, max_value=24, value=6)
+    free_time = st.number_input("Free time per day (hours)", min_value=0.0, max_value=24.0, value=2.0)
+    using_products = st.radio("Are you currently using skincare products?", options=["yes", "no"])
 
-        st.markdown(f"**Skin Type**: {skin_type}")
-        st.markdown(f"**Acne Detection**: {acne_level[0]} ({acne_level[1]*100:.2f}%)")
-        st.markdown(f"**Wrinkle Level**: {wrinkle_level}")
+    # Step 3: Generate button
+    if st.button("💡 Generate Recommendations"):
+        st.subheader("🔍 Step 1: Analyzing Skin Details")
+        skin_type = predict_skin_type(image_path)
+        acne_label, acne_prob = predict_acne(image_path)
+        wrink_lvl = predict_wrinkles(image_path)
 
+        st.write(f"**Skin Type:** {skin_type}")
+        st.write(f"**Acne Level:** {acne_label} ({acne_prob:.2f}%)")
+        st.write(f"**Wrinkle Level:** {wrink_lvl}")
+
+        st.subheader("📋 Step 4: Personalized Recommendations")
         recs = generate_recommendation(
-            skin_type, acne_level, wrinkle_level,
-            age, profession, work_hours, free_time, using_products
+            skin_type.lower(),
+            (acne_label.lower(), acne_prob),
+            wrink_lvl.lower(),
+            age, profession, work_hours, free_time,
+            using_products.lower()
         )
 
-        st.subheader("🎯 Recommendations")
         for i, rec in enumerate(recs, 1):
             st.markdown(f"{i}. {rec}")
