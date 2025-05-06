@@ -12,6 +12,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 
+st.set_page_config(page_title="SkinCare Analyzer")
+
+
 # Load models
 skin_model = joblib.load("models/skin_type_svm_model.pkl")
 skin_pca = joblib.load("models/skin_type_pca.pkl")
@@ -190,13 +193,6 @@ def generate_recommendation(skin_type, acne_lvl, wrink_lvl, age, profession, wor
 
     return recommendations
 
-# Streamlit app setup
-import streamlit as st
-from PIL import Image
-import os
-
-# Set page config
-st.set_page_config(page_title="SkinCare Analyzer")
 st.title("🧴 AI-Based SkinCare Recommendation System")
 
 # Image upload
