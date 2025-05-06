@@ -98,12 +98,14 @@ def predict_acne(img):
     features = extract_acne_features(img)
     pred = acne_model.predict([features])[0]
     prob = acne_model.predict_proba([features])[0][pred]
-    label = "acne" if pred else "no acne"
-    if label == "acne" and prob > 70:
+    if pred == 1 and prob >= 0.60:
+        label = "Acne detected"
         return (label, prob * 100)
-    elif label == "acne":
+    elif pred == 1 and prob < 0.60:
+        label = "Slight possibility of acne"
         return (label, prob * 100)
     else:
+        label = "No acne"
         return (label, prob * 100) 
 
 def predict_wrinkles(img):
