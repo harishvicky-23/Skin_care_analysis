@@ -8,13 +8,16 @@ from skimage.feature import local_binary_pattern
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 
 # Load models
 skin_model = joblib.load("models/skin_type_svm_model.pkl")
 skin_pca = joblib.load("models/skin_type_pca.pkl")
 skin_scaler = joblib.load("models/skin_type_scaler.pkl")
 
-acne_model = joblib.load("models/acne_model.pkl")
+acne_model = joblib.load("models/svm_acne_vgg_model.pkl")
 
 wrinkle_model = load("models/wrinkle_model.joblib")
 wrinkle_pca = load("models/wrinkle_pca.joblib")
@@ -43,7 +46,7 @@ def extract_skin_features(img_path):
     haralick_feat = mahotas.features.haralick(gray).mean(axis=0)
     return np.concatenate([color_feat, lbp_hist, haralick_feat])
 
-def extract_acne_features(img_path):
+"""def extract_acne_features(img_path):
     img = Image.open(img_path).convert("RGB")
     img = np.array(img)
     img = cv2.resize(img, (224, 224))
@@ -56,7 +59,22 @@ def extract_acne_features(img_path):
     lbp = local_binary_pattern(gray, 8, 1, method='uniform')
     lbp_hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 10), range=(0, 9))
 
-    return np.concatenate([rgb_hist, hsv_hist, lbp_hist])
+    return np.concatenate([rgb_hist, hsv_hist, lbp_hist])"""
+
+def extract_acne_features(img_path):
+    # Load and preprocess the image
+    img = image.load_img(img_path, target_size=(224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+
+    # Load the VGG16 model (without top layers)
+    base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+    feature_extractor = Model(inputs=base_model.input, outputs=base_model.output)
+    
+    # Extract features
+    features = feature_extractor.predict(x)
+    return features.flatten()
 
 def extract_wrinkle_features(img_path):
     img = Image.open(img_path).convert("RGB")
@@ -80,7 +98,12 @@ def predict_acne(img):
     pred = acne_model.predict([features])[0]
     prob = acne_model.predict_proba([features])[0][pred]
     label = "acne" if pred else "no acne"
-    return (label, prob * 100)
+    if label == "acne" and prob > 70:
+        return (label, prob * 100)
+    elif label == "acne":
+        return (label, prob * 100)
+    else:
+        return (label, prob * 100) 
 
 def predict_wrinkles(img):
     features = extract_wrinkle_features(img)
