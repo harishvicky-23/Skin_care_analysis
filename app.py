@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import cv2
-import joblib
+from joblib import load
 import mahotas
 from skimage.feature import local_binary_pattern
 import matplotlib.pyplot as plt
