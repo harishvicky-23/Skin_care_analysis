@@ -67,6 +67,7 @@ def extract_wrinkle_features(img_path):
 
 # --- Prediction functions ---
 def predict_skin_type(img):
+    skin_classes = ['dry', 'normal', 'oily']
     features = extract_skin_features(img)
     features_scaled = skin_scaler.transform([features])
     features_pca = skin_pca.transform(features_scaled)
