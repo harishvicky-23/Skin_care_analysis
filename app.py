@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import os
 from PIL import Image
 from tensorflow.keras.models import Model
-from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 
 st.set_page_config(page_title="SkinCare Analyzer")
