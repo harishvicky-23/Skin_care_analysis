@@ -113,15 +113,13 @@ def predict_wrinkles(img):
     features_pca = wrinkle_pca.transform([features])
     prediction = wrinkle_model.predict(features_pca)[0]
     prob = wrinkle_model.predict_proba(features_pca)[0]
-    label = wrinkle_le.inverse_transform([prediction])[0].lower()
+    label = wrinkle_le.inverse_transform([prediction])[0]
     confidence = prob[prediction]
     # Apply confidence condition
-    if label == 'wrinkled' and confidence >= 0.99:
+    if label.lower() == 'wrinkled' and confidence >= 0.99:
         final_label = 'wrinkled'
-    elif label == 'wrinkled':
+    elif label.lower() == 'wrinkled' and confidence < 0.99:
         final_label = 'not wrinkled'  # downgrade if not confident
-    else:
-        final_label = label  # keep 'not wrinkled' as is
     return final_label
 
 # --- Recommendation Logic ---
