@@ -7,3 +7,4 @@ joblib
 scikit-image
 mahotas
 matplotlib
+tensorflow
