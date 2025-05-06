@@ -88,7 +88,7 @@ def predict_wrinkles(img):
     label = wrinkle_le.inverse_transform([prediction])[0].lower()
     confidence = prob[prediction]
     # Apply confidence condition
-    if label == 'wrinkled' and confidence == 1.0:
+    if label == 'wrinkled' and confidence >= 0.99:
         final_label = 'wrinkled'
     elif label == 'wrinkled':
         final_label = 'not wrinkled'  # downgrade if not confident
