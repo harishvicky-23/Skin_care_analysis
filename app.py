@@ -15,9 +15,9 @@ skin_scaler = joblib.load("models/skin_type_scaler.pkl")
 
 acne_model = joblib.load("models/acne_model.pkl")
 
-wrinkle_model = joblib.load("models/wrinkle_model.pkl")
-wrinkle_pca = joblib.load("models/wrinkle_pca.pkl")
-wrinkle_le = joblib.load("models/wrinkle_label_encoder.pkl")
+wrinkle_model = load("models/wrinkle_model.joblib")
+wrinkle_pca = load("models/wrinkle_pca.joblib")
+wrinkle_le = load("models/wrinkle_label_encoder.joblib")
 
 skin_classes = ['dry', 'normal', 'oily']
 
@@ -62,7 +62,7 @@ def extract_wrinkle_features(img_path):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, (128, 128))
     haralick = mahotas.features.haralick(gray).mean(axis=0)
-    return haralick
+    return haralick[:6]
 
 # --- Prediction functions ---
 def predict_skin_type(img):
@@ -83,7 +83,17 @@ def predict_wrinkles(img):
     features = extract_wrinkle_features(img)
     features_pca = wrinkle_pca.transform([features])
     prediction = wrinkle_model.predict(features_pca)[0]
-    return wrinkle_le.inverse_transform([prediction])[0].lower()
+    prob = wrinkle_model.predict_proba(features_pca)[0]
+    label = wrinkle_le.inverse_transform([prediction])[0].lower()
+    confidence = prob[prediction]
+    # Apply confidence condition
+    if label == 'wrinkled' and confidence > 0.98:
+        final_label = 'wrinkled'
+    elif label == 'wrinkled':
+        final_label = 'not wrinkled'  # downgrade if not confident
+    else:
+        final_label = label  # keep 'not wrinkled' as is
+    return final_label
 
 # --- Recommendation Logic ---
 def generate_recommendation(skin_type, acne_lvl, wrink_lvl, age, profession, work_hours, free_time, using_products):
