@@ -48,21 +48,6 @@ def extract_skin_features(img_path):
     haralick_feat = mahotas.features.haralick(gray).mean(axis=0)
     return np.concatenate([color_feat, lbp_hist, haralick_feat])
 
-"""def extract_acne_features(img_path):
-    img = Image.open(img_path).convert("RGB")
-    img = np.array(img)
-    img = cv2.resize(img, (224, 224))
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    rgb_hist = np.concatenate([cv2.calcHist([img], [i], None, [32], [0, 256]).flatten() for i in range(3)])
-    hsv_hist = np.concatenate([cv2.calcHist([hsv], [i], None, [32], [0, 256]).flatten() for i in range(3)])
-
-    lbp = local_binary_pattern(gray, 8, 1, method='uniform')
-    lbp_hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 10), range=(0, 9))
-
-    return np.concatenate([rgb_hist, hsv_hist, lbp_hist])"""
-
 def extract_acne_features(img_path):
     img = Image.open(img_path).convert("RGB")
     img = np.array(img)
