@@ -65,18 +65,17 @@ def extract_skin_features(img_path):
     return np.concatenate([rgb_hist, hsv_hist, lbp_hist])"""
 
 def extract_acne_features(img_path):
-    # Load and preprocess the image
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-
+    img = Image.open(img_path).convert("RGB")
+    img = np.array(img)
+    img = cv2.resize(img, (224, 224))
+    img = np.expand_dims(img, axis=0)
+    img = preprocess_input(img)
     # Load the VGG16 model (without top layers)
     base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
     feature_extractor = Model(inputs=base_model.input, outputs=base_model.output)
     
     # Extract features
-    features = feature_extractor.predict(x)
+    features = feature_extractor.predict(img)
     return features.flatten()
 
 def extract_wrinkle_features(img_path):
