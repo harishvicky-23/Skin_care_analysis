@@ -176,7 +176,7 @@ def generate_recommendation(skin_type, acne_lvl, wrink_lvl, age, profession, wor
 
     return recommendations
 
-st.title("🧴 AI-Based SkinCare Recommendation System")
+st.markdown("<h1 style='text-align: center;'>🧴 AI-Based SkinCare Recommendation System</h1>", unsafe_allow_html=True)
 
 # Image upload
 uploaded_file = st.file_uploader("📤 Upload a face image", type=["jpg", "jpeg", "png"])
