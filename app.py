@@ -192,7 +192,7 @@ if uploaded_file is not None:
     st.image(image_path, caption="Uploaded Image", use_container_width=True)
 
 # Step 2: User inputs
-st.subheader("🧍 Step 2: Enter Lifestyle Details")
+st.subheader("🧍Enter Lifestyle Details")
 age = st.number_input("Enter your age", min_value=10, max_value=100, value=25)
 profession = st.text_input("Enter your profession", value="Student")
 work_hours = st.number_input("Average work hours per day", min_value=0, max_value=24, value=6)
@@ -202,7 +202,7 @@ using_products = st.radio("Are you currently using skincare products?", options=
 # Step 3: Button to trigger prediction
 if st.button("💡 Generate Recommendations"):
     if image_path and os.path.exists(image_path):
-        st.subheader("🔍 Step 1: Analyzing Skin Details")
+        st.subheader("🔍 Analyzing Skin Details")
 
         # Call your models here (make sure they are defined above this code)
         skin_type = predict_skin_type(image_path)
