@@ -215,7 +215,7 @@ if st.button("💡 Generate Recommendations"):
         st.write(f"**Wrinkle Level:** {wrink_lvl}")
 
         # Step 4: Recommendations
-        st.subheader("📋 Step 4: Personalized Recommendations")
+        st.subheader("📋 Personalized Recommendations")
         recs = generate_recommendation(
             skin_type.lower(),
             (acne_label.lower(), acne_prob),
