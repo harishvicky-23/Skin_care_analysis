@@ -1,8 +1,3 @@
-# Skin_care_analysis
-A skincare analysis system that process out input image and gets day to day life details as input and gives recommendations.
-
-Try it here!!! 
-https://skincareanalysis-vwymbk3mtyfgzbwzafcev6.streamlit.app/
 # 🧴 AI Skin Analyzer & Skincare Recommender
 
 An AI-powered web application that evaluates facial skin conditions and provides personalized skincare recommendations — all from a single image.
