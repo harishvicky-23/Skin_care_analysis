@@ -3,7 +3,7 @@
 An AI-powered web application that evaluates facial skin conditions and provides personalized skincare recommendations — all from a single image.
 
 🔗 **[Try the Live Demo](
-https://skincareanalysis-vwymbk3mtyfgzbwzafcev6.streamlit.app/)**
+https://ai-skincare-tool.streamlit.app/)**
 
 ---
 
