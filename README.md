@@ -32,6 +32,12 @@ This project leverages computer vision and machine learning to identify common s
 - 💻 **Interactive Interface**  
   Built with **Streamlit** for seamless and responsive user interaction.
 
+
+- ☁️ **Cloud Deployed**  
+  Accessible anytime via **Streamlit Cloud**.
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
@@ -53,9 +59,5 @@ Flutter Developer | AI & Data Science Enthusiast
 
 
 
-- ☁️ **Cloud Deployed**  
-  Accessible anytime via **Streamlit Cloud**.
-
----
 
 
