@@ -32,7 +32,7 @@ This project leverages computer vision and machine learning to identify common s
 - 💻 **Interactive Interface**  
   Built with **Streamlit** for seamless and responsive user interaction.
 
-  # 📄 License
+# 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
 
