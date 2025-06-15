@@ -32,6 +32,27 @@ This project leverages computer vision and machine learning to identify common s
 - 💻 **Interactive Interface**  
   Built with **Streamlit** for seamless and responsive user interaction.
 
+  ## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+You are free to use, modify, and distribute this software with proper attribution.  
+See the [LICENSE](LICENSE) file for full license text.
+
+---
+
+## 👨‍💻 Author
+
+**Harish R**  
+Flutter Developer | AI & Data Science Enthusiast  
+📍 Chennai, India  
+🔗 [LinkedIn](www.linkedin.com/in/harish-ai-engineer)  
+✉️ harish.ai.engineer@gmail.com
+
+> Passionate about building beautiful, functional, and responsive Flutter apps.
+
+
+
 - ☁️ **Cloud Deployed**  
   Accessible anytime via **Streamlit Cloud**.
 
